@@ -42,6 +42,7 @@ LittlevGL provides everything you need to create a Graphical User Interface (GUI
 
 ### Supported devices
 Basically, every modern controller - which is able to drive a display - is suitable to run LittlevGL. The minimal requirements:
+
 - **16, 32 or 64-bit** microcontroller or processor
 - **&gt; 16 MHz** clock speed
 - **&gt; 8 kB RAM for static data** and **&gt; 2 KB RAM for dynamic data** (graphical objects)
@@ -49,6 +50,7 @@ Basically, every modern controller - which is able to drive a display - is suita
 - **Optionally ~1/10 screen sized memory** for buffered drawing (on 240 × 320, 16-bit colors it's 15 kB)
 
 Just to mention some **platforms**:
+
 - STM32F1, STM32F3, [STM32F4](https://blog.littlevgl.com/2017-07-15/stm32f429_disco_port), [STM32F7](https://github.com/littlevgl/stm32f746_disco_no_os_sw4stm32)
 - Microchip dsPIC33, PIC24, PIC32MX, PIC32MZ
 - NXP Kinetis, LPC, iMX
@@ -70,62 +72,68 @@ Choose a project with your favourite IDE:
 
 ### Porting to an embedded hardware
 In the most simple case you need to do these steps:
+
 1. Copy `lv_conf_templ.h` as `lv_conf.h` next to `lvgl` and set at least `LV_HOR_RES`, `LV_VER_RES` and `LV_COLOR_DEPTH`. 
 2. Call `lv_tick_inc(x)` every `x` milliseconds **in a Timer or Task** (`x` should be between 1 and 10). It is required for the internal timing of LittlevGL. **It's very important that you don't call `lv_task_handler` in the same loop.**
 3. Call `lv_init()`
 4. Create a buffer for LittlevGL
-```c
-static lv_disp_buf_t disp_buf;
-static lv_color_t buf[LV_HOR_RES_MAX * 10];                     /*Declare a buffer for 10 lines*/
-lv_disp_buf_init(&disp_buf, buf, NULL, LV_HOR_RES_MAX * 10);    /*Initialize the display buffer*/
-```
+
+    ```c
+    static lv_disp_buf_t disp_buf;
+    static lv_color_t buf[LV_HOR_RES_MAX * 10];                     /*Declare a buffer for 10 lines*/
+    lv_disp_buf_init(&disp_buf, buf, NULL, LV_HOR_RES_MAX * 10);    /*Initialize the display buffer*/
+    ```
+
 4. Implement and register a function which can **copy a pixel array** to an area of your diplay:
-```c
-lv_disp_drv_t disp_drv;               /*Descriptor of a display driver*/
-lv_disp_drv_init(&disp_drv);          /*Basic initialization*/
-disp_drv.hor_res = 480;               /*Set the horizontal resolution*/
-disp_drv.ver_res = 320;               /*Set the vertical resolution*/
-disp_drv.flush_cb = my_disp_flush;    /*Set your driver function*/
-disp_drv.buffer = &disp_buf;          /*Assign the buffer to teh display*/
-lv_disp_drv_register(&disp_drv);      /*Finally register the driver*/
-    
-void my_disp_flush(lv_disp_t * disp, const lv_area_t * area, lv_color_t * color_p)
-{
-    int32_t x, y;
-    for(y = area->y1; y <= area->y2; y++) {
-        for(x = area->x1; x <= area->x2; x++) {
-            set_pixel(x, y, *color_p);  /* Put a pixel to the display.*/
-            color_p++;
+
+    ```c
+    lv_disp_drv_t disp_drv;               /*Descriptor of a display driver*/
+    lv_disp_drv_init(&disp_drv);          /*Basic initialization*/
+    disp_drv.hor_res = 480;               /*Set the horizontal resolution*/
+    disp_drv.ver_res = 320;               /*Set the vertical resolution*/
+    disp_drv.flush_cb = my_disp_flush;    /*Set your driver function*/
+    disp_drv.buffer = &disp_buf;          /*Assign the buffer to teh display*/
+    lv_disp_drv_register(&disp_drv);      /*Finally register the driver*/
+        
+    void my_disp_flush(lv_disp_t * disp, const lv_area_t * area, lv_color_t * color_p)
+    {
+        int32_t x, y;
+        for(y = area->y1; y <= area->y2; y++) {
+            for(x = area->x1; x <= area->x2; x++) {
+                set_pixel(x, y, *color_p);  /* Put a pixel to the display.*/
+                color_p++;
+            }
         }
-    }
-
-    lv_disp_flush_ready(disp);                  /* Tell you are ready with the flushing*/
-}
     
-```
+        lv_disp_flush_ready(disp);                  /* Tell you are ready with the flushing*/
+    }
+        
+    ```
 5. Register a function which can **read an input device**. E.g. for a touch pad:
-```c
-lv_indev_drv_init(&indev_drv);             /*Descriptor of a input device driver*/
-indev_drv.type = LV_INDEV_TYPE_POINTER;    /*Touch pad is a pointer-like device*/
-indev_drv.read_cb = my_touchpad_read;      /*Set your driver function*/
-lv_indev_drv_register(&indev_drv);         /*Finally register the driver*/
 
-bool my_touchpad_read(lv_indev_t * indev, lv_indev_data_t * data)
-{
-    static lv_coord_t last_x = 0;
-    static lv_coord_t last_y = 0;
-
-    /*Save the state and save the pressed coordinate*/
-    data->state = touchpad_is_pressed() ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL; 
-    if(data->state == LV_INDEV_STATE_PR) touchpad_get_xy(&last_x, &last_y);
-   
-    /*Set the coordinates (if released use the last pressed coordinates)*/
-    data->point.x = last_x;
-    data->point.y = last_y;
-
-    return false; /*Return `false` because we are not buffering and no more data to read*/
-}
-```
+    ```c
+    lv_indev_drv_init(&indev_drv);             /*Descriptor of a input device driver*/
+    indev_drv.type = LV_INDEV_TYPE_POINTER;    /*Touch pad is a pointer-like device*/
+    indev_drv.read_cb = my_touchpad_read;      /*Set your driver function*/
+    lv_indev_drv_register(&indev_drv);         /*Finally register the driver*/
+    
+    bool my_touchpad_read(lv_indev_t * indev, lv_indev_data_t * data)
+    {
+        static lv_coord_t last_x = 0;
+        static lv_coord_t last_y = 0;
+    
+        /*Save the state and save the pressed coordinate*/
+        data->state = touchpad_is_pressed() ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL; 
+        if(data->state == LV_INDEV_STATE_PR) touchpad_get_xy(&last_x, &last_y);
+       
+        /*Set the coordinates (if released use the last pressed coordinates)*/
+        data->point.x = last_x;
+        data->point.y = last_y;
+    
+        return false; /*Return `false` because we are not buffering and no more data to read*/
+    }
+    ```
+    
 6. Call `lv_task_handler()` periodically every few milliseconds in the main `while(1)` loop, in Timer interrupt or in an Operation system task. It will redraw the screen if required, handle input devices etc. **It's very important that you don't call `lv_tick_inc` in the same loop.**
 
 For a detailed description check the [Documentation](https://docs.littlevgl.com/#Porting) or the [Porting examples](https://github.com/littlevgl/lvgl/tree/multi-disp/lv_porting).
@@ -133,6 +141,7 @@ For a detailed description check the [Documentation](https://docs.littlevgl.com/
  
 ### Code examples
 #### Create a button with a label and assign a click callback
+
 ```c
 lv_obj_t * btn = lv_btn_create(lv_scr_act(), NULL);     /*Add a button the current screen*/
 lv_obj_set_pos(btn, 10, 10);                            /*Set its position*/
@@ -148,6 +157,7 @@ lv_res_t btn_action(lv_obj_t * btn)
     return LV_RES_OK;
 }
 ```
+
 ![Simple button with LittelvGL](https://littlevgl.com/github/btn1.gif)
 
 #### Modify the styles
