@@ -507,15 +507,15 @@ static lv_res_t lv_slider_signal(lv_obj_t * slider, lv_signal_t sign, void * par
         lv_indev_get_point(param, &p);
         int16_t tmp = 0;
         if(w > h) {
-            lv_coord_t knob_w = h;
+            lv_coord_t knob_w = ext->sharp_indic_edge ? 0 : h; /*no knob width correction for sharp edge sliders*/
             p.x -=
-                slider->coords.x1 + h / 2; /*Modify the point to shift with half knob (important on the start and end)*/
+                slider->coords.x1 + knob_w / 2; /*Modify the point to shift with half knob (important on the start and end)*/
             tmp = (int32_t)((int32_t)p.x * (ext->bar.max_value - ext->bar.min_value + 1)) / (w - knob_w);
             tmp += ext->bar.min_value;
         } else {
-            lv_coord_t knob_h = w;
+            lv_coord_t knob_h = ext->sharp_indic_edge ? 0 : w; /*no knob width correction for sharp edge sliders*/
             p.y -=
-                slider->coords.y1 + w / 2; /*Modify the point to shift with half knob (important on the start and end)*/
+                slider->coords.y1 + knob_h / 2; /*Modify the point to shift with half knob (important on the start and end)*/
             tmp = (int32_t)((int32_t)p.y * (ext->bar.max_value - ext->bar.min_value + 1)) / (h - knob_h);
             tmp = ext->bar.max_value - tmp; /*Invert the value: smaller value means higher y*/
         }
