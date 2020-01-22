@@ -399,9 +399,9 @@ static inline uint32_t lv_color_to32(lv_color_t color)
      * The faster integer math for conversion is:
      *  valueto = ( valuefrom * multiplier + adder ) >> divisor
      *   multiplier = FLOOR( ( (2^bitsto - 1) << divisor ) / (float)(2^bitsfrom - 1) )
-     * 
+     *
      * Find the first divisor where ( adder >> divisor ) <= 0
-     * 
+     *
      * 5-bit to 8-bit: ( 31 * multiplier + adder ) >> divisor = 255
      * divisor  multiplier  adder  min (0)  max (31)
      *       0           8      7        7       255
@@ -410,7 +410,7 @@ static inline uint32_t lv_color_to32(lv_color_t color)
      *       3          65     25        3       255
      *       4         131     19        1       255
      *       5         263      7        0       255
-     * 
+     *
      * 6-bit to 8-bit: 255 = ( 63 * multiplier + adder ) >> divisor
      * divisor  multiplier  adder  min (0)  max (63)
      *       0           4      3        3       255
@@ -464,17 +464,17 @@ static inline uint8_t lv_color_brightness(lv_color_t color)
 
 /* The most simple macro to create a color from R,G and B values */
 #if LV_COLOR_DEPTH == 1
-#define LV_COLOR_MAKE(r8, g8, b8) ((lv_color_t){.full = (b8 >> 7 | g8 >> 7 | r8 >> 7)})
+#define LV_COLOR_MAKE(r8, g8, b8) ((lv_color_t){.full = (b8) >> 7 | (g8) >> 7 | (r8) >> 7)})
 #elif LV_COLOR_DEPTH == 8
-#define LV_COLOR_MAKE(r8, g8, b8) ((lv_color_t){{b8 >> 6, g8 >> 5, r8 >> 5}})
+#define LV_COLOR_MAKE(r8, g8, b8) ((lv_color_t){{(uint8_t)((b8) >> 6), (uint8_t)((g8) >> 5), (uint8_t)((r8) >> 5)}})
 #elif LV_COLOR_DEPTH == 16
 #if LV_COLOR_16_SWAP == 0
-#define LV_COLOR_MAKE(r8, g8, b8) ((lv_color_t){{b8 >> 3, g8 >> 2, r8 >> 3}})
+#define LV_COLOR_MAKE(r8, g8, b8) ((lv_color_t){{(uint16_t)((b8) >> 3), (uint16_t)((g8) >> 2), (uint16_t)((r8) >> 3)}})
 #else
-#define LV_COLOR_MAKE(r8, g8, b8) ((lv_color_t){{g8 >> 5, r8 >> 3, b8 >> 3, (g8 >> 2) & 0x7}})
+#define LV_COLOR_MAKE(r8, g8, b8) ((lv_color_t){{(uint16_t)((g8) >> 5), (uint16_t)((r8) >> 3), (uint16_t)((b8) >> 3), (uint16_t)(((g8) >> 2) & 0x7)}})
 #endif
 #elif LV_COLOR_DEPTH == 32
-#define LV_COLOR_MAKE(r8, g8, b8) ((lv_color_t){{b8, g8, r8, 0xff}}) /*Fix 0xff alpha*/
+#define LV_COLOR_MAKE(r8, g8, b8) ((lv_color_t){{(uint8_t)(b8), (uint8_t)(g8), (uint8_t)(r8), 0xff}}) /*Fixed 0xff alpha*/
 #endif
 
 static inline lv_color_t lv_color_make(uint8_t r, uint8_t g, uint8_t b)
